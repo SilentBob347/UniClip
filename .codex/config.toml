@@ -2,3 +2,8 @@
 description = "Explore this repository read-only: locate relevant code, trace behavior, map dependencies, and report evidence before implementation or review work."
 config_file = "agents/repo-explorer.toml"
 nickname_candidates = ["Scout", "Pathfinder", "Tracer"]
+
+[mcp_servers.maestro]
+command = "bash"
+args = ["scripts/maestro-mcp.sh"]
+startup_timeout_sec = 60
