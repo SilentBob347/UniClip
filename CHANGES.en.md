@@ -1,3 +1,24 @@
+v2.0.0.184-alpha.8
+
+### Common
+
+- Improvement: Update the sync core to v1.1.0-rc.19
+- New: Redesigned device joining with space device update status and clearer invitation errors
+- Improvement: Unify custom relay configuration and reduce device list flicker during refresh
+- Fix: Refresh space state when the app returns to the foreground
+
+### iOS
+
+- New: Native Clipboard, Devices and Settings tabs, with refreshed settings, keyboard and share pages
+- Improvement: Group history by day, tap for details, double-tap to copy, and updated search and word selection
+- Fix: Improve navigation bar visibility across subpages and sheets
+
+### Android
+
+- New: Material 3 navigation, device and settings pages, and redesigned space joining
+- Improvement: Group history by day, tap for details, double-tap to copy, and updated search and word selection
+- Fix: Correct system Back navigation on Android 13–15 subpages and in home search
+
 v2.0.0.183-alpha.7
 
 ### Common
