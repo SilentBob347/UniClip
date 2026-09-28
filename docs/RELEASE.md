@@ -112,6 +112,29 @@ Run `npm run changelog:generate` after editing the top CHANGES blocks and commit
 all four generated files. `npm run release:validate` rejects missing or stale
 client changelog files before the release tag can be created.
 
+### Stable Notes Compare Against the Previous Stable
+
+A stable release's notes describe what a user upgrading from the previous
+stable release will notice, not the history of the alpha cycle in between.
+For `v2.0.0.B`, the baseline is the last `1.3.x` stable build, not the last
+alpha.
+
+- **Do not concatenate alpha blocks.** Rewrite the stable block from the net
+  difference between the previous stable and this build.
+- **Fixes must predate the cycle.** A `修复` / `Fix` bullet belongs in stable
+  notes only when the problem was reachable in the previous stable release.
+  Fixes for regressions introduced and resolved during the alpha cycle are
+  development noise; drop them.
+- **Collapse intermediate states.** A feature added in one alpha and reworked
+  in a later one is one bullet describing the final behavior. Intermediate
+  sync-core versions are dropped; mention only the final one if relevant.
+- **When unsure whether a bug existed before**, check the previous stable's
+  code or `CHANGES.md` entries up to that tag. If it cannot be established,
+  leave the bullet out.
+
+Alpha notes are different: testers compare against the previous alpha, so
+alpha-cycle fixes do belong in alpha blocks.
+
 Bullets may still carry a provenance tag (`[uc]` for UniClip-specific changes,
 `[upstream]` for changes ported from `Jeric-X/syncclipboard-mobile` /
 `Jeric-X/SyncClipboard`, with a commit/PR ref when possible).
@@ -199,6 +222,9 @@ independent.
       changelog.
 - [ ] `CHANGES.md` and `CHANGES.en.md` top sections contain equivalent final
       release notes and start with the same full tag `vX.Y.Z.B`.
+- [ ] For a stable release, the notes compare against the previous stable
+      release and contain no fixes for alpha-only regressions (see
+      "Stable Notes Compare Against the Previous Stable").
 - [ ] `npm run changelog:generate` was run and all four matching files under
       `changelogs/` are committed.
 - [ ] `app.json` build metadata was bumped with the scripts below (never
