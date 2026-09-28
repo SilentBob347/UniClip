@@ -8,7 +8,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "buildNumber": "185",
+      "buildNumber": "186",
       "supportsTablet": true,
       "appleTeamId": "8XG39X5CL8",
       "bundleIdentifier": "app.uniclipboard.UniClipboard",
@@ -23,7 +23,7 @@
       }
     },
     "android": {
-      "versionCode": 185,
+      "versionCode": 186,
       "softwareKeyboardLayoutMode": "pan",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -137,10 +137,6 @@
             }
           }
         }
-      },
-      "releaseChannel": {
-        "name": "alpha",
-        "number": 9
       }
     }
   }
