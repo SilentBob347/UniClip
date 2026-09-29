@@ -1,3 +1,12 @@
+v2.0.0.187-alpha.1
+
+### Android
+
+- Fix: LAN sync stopped receiving in the background until the app was reopened
+- Fix: Tapping the "Background service stopped" notification did not restart the service
+- Fix: The "Upload clipboard" shortcut failed to start
+- Improvement: Update the sync core to v1.1.0-rc.21
+
 v2.0.0.186
 
 ### Common
