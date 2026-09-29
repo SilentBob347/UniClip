@@ -51,8 +51,22 @@ marketing version forces a full review.
    ```
 
    It sets `expo.ios.buildNumber` (and `android.versionCode`) to the next value and
-   prints the tag `v<version>.<build>` (e.g. `v1.3.0.160`). Capture the new build
-   number for later steps, e.g. `BUILD=$(node -p "require('./app.json').expo.ios.buildNumber")`.
+   prints the tag `v<version>.<build>` (e.g. `v1.3.0.160`). The counter is shared
+   with Android and with every other published artifact, so the script also skips
+   past the highest release tag on origin. Capture the new build number for later
+   steps, e.g. `BUILD=$(node -p "require('./app.json').expo.ios.buildNumber")`.
+
+   Then confirm no earlier artifact used that number:
+
+   ```bash
+   # cwd: repo root
+   npm run release:check-build
+   ```
+
+   It fails when a release tag on origin already has the number and prints the
+   `npm run release:build -- --after N` command to use instead. Locally it cannot
+   see App Store Connect: if the user knows of a newer TestFlight dev upload, bump
+   past it with `--after`.
 
 2. A local archive builds from the existing `ios/` prebuild output and does NOT
    re-read `app.json` (the `CFBundleVersion` in `ios/<Target>/Info.plist` is a baked
@@ -136,7 +150,17 @@ Run in the background (re-sign + upload takes a few minutes). Success looks like
 Expected non-blocking warnings: `Upload Symbols Failed … dSYM` for prebuilt
 frameworks (React, hermesvm, SDWebImage, …). These only affect crash symbolication.
 
-## Step 4 — Tell the user what to do in App Store Connect
+## Step 4 — Record the consumed build number
+
+This upload consumed the build number even though no tag was created. Record it on
+`main` so the next bump starts after it: add matching top blocks for the new tag to
+`CHANGES.md` and `CHANGES.en.md` (the pre-push hook requires them to match
+`app.json`), run `npm run changelog:generate`, then commit
+`app.json CHANGES.md CHANGES.en.md changelogs` and push to `main` after the user
+confirms. If the bump is not pushed, the next CI release still refuses the number
+(it checks App Store Connect) and asks for `npm run release:build -- --after N`.
+
+## Step 5 — Tell the user what to do in App Store Connect
 
 The remaining steps are manual in https://appstoreconnect.apple.com → TestFlight:
 

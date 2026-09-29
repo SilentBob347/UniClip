@@ -4,7 +4,10 @@
 #   - github-release     publish the Android APKs to a GitHub Release
 #   - android-release    upload Android APKs to R2 and register with FlareRelease
 #
-# Called by build.yml only after validation, both builds, and tag creation.
+# Called by build.yml only after validation, the selected builds, and tag
+# creation. `platforms` limits publishing to what was built: an Android-only
+# release skips TestFlight, an iOS-only release skips the APK destinations and
+# publishes a GitHub Release without assets that does not become "latest".
 
 name: release
 
@@ -18,10 +21,16 @@ on:
         description: 'Validated release tag created by the calling workflow'
         required: true
         type: string
+      platforms:
+        description: 'Platforms this release ships: both, android, or ios'
+        required: false
+        default: both
+        type: string
 
 jobs:
   testflight:
     name: Upload to TestFlight
+    if: ${{ inputs.platforms != 'android' }}
     runs-on: macos-26
     timeout-minutes: 45
     steps:
@@ -90,11 +99,14 @@ jobs:
           ref: ${{ inputs.tag_name }}
 
       - name: Generate per-platform release notes
+        env:
+          PLATFORMS: ${{ inputs.platforms }}
         run: |
-          node scripts/release-notes.mjs
+          node scripts/release-notes.mjs --platform "$PLATFORMS"
           cat release-notes-github.md
 
       - name: Download APK artifacts
+        if: ${{ inputs.platforms != 'ios' }}
         uses: actions/download-artifact@v8
         with:
           name: apk-arm64-v8a
@@ -106,13 +118,15 @@ jobs:
           allowUpdates: true
           tag: ${{ inputs.tag_name }}
           prerelease: ${{ contains(inputs.tag_name, '-alpha.') || contains(inputs.tag_name, '-beta') }}
+          makeLatest: ${{ inputs.platforms == 'ios' && 'false' || 'legacy' }}
           bodyFile: release-notes-github.md
-          artifacts: apk/*.apk
+          artifacts: ${{ inputs.platforms != 'ios' && 'apk/*.apk' || '' }}
 
   # APKs remain immutable R2 objects. FlareRelease owns mutable channel state;
   # registration creates a Ready release and never promotes a channel.
   android-release:
     name: Register Android release
+    if: ${{ inputs.platforms != 'ios' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

@@ -18,6 +18,10 @@ function createFixture(scriptName: ScriptName): string {
   const fixtureScripts = join(fixtureRoot, 'scripts');
   mkdirSync(fixtureScripts);
   copyFileSync(join(projectRoot, 'scripts', scriptName), join(fixtureScripts, scriptName));
+  copyFileSync(
+    join(projectRoot, 'scripts', 'build-counter.mjs'),
+    join(fixtureScripts, 'build-counter.mjs')
+  );
 
   const app = {
     expo: {

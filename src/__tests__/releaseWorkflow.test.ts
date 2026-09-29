@@ -79,7 +79,7 @@ describe('validated release workflow', () => {
       'npm run lint && npm run type-check'
     );
     expect(packageScripts['test:ci']).toBe(
-      'npm test -- --runInBand && ruby scripts/asc_whats_to_test_test.rb && npm run test:coverage -- --runInBand'
+      'npm test -- --runInBand && ruby scripts/asc_whats_to_test_test.rb && ruby scripts/asc_latest_build_test.rb && npm run test:coverage -- --runInBand'
     );
     expect(packageScripts['check:ci']).toBe('npm run check:quality && npm run test:ci');
     expect(packageScripts['release:check']).toBe('npm run release:validate && npm run check:ci');
@@ -155,6 +155,52 @@ describe('validated release workflow', () => {
       expect(releaseSurface).not.toContain('universal');
     }
     expect(androidBuildWorkflow).toContain('if-no-files-found: error');
+  });
+
+  it('publishes Android-only, iOS-only, or both from one release mode', () => {
+    expect(buildWorkflow).toMatch(
+      /platforms:[\s\S]*?type: choice[\s\S]*?- both\s*\n\s*- android\s*\n\s*- ios/
+    );
+    expect(buildWorkflow).toMatch(
+      /android-build:\s*\n\s*needs:[^\n]*\n\s*if: \$\{\{ github\.event_name != 'workflow_dispatch' \|\| inputs\.platforms != 'ios' \}\}/
+    );
+    expect(buildWorkflow).toContain(
+      "if: ${{ github.event_name == 'workflow_dispatch' && inputs.platforms != 'android' }}"
+    );
+    // A deselected platform is skipped, never a reason to tag a failed build.
+    expect(buildWorkflow).toContain(
+      "(needs.android-build.result == 'success' || (inputs.platforms == 'ios' && needs.android-build.result == 'skipped'))"
+    );
+    expect(buildWorkflow).toContain(
+      "(needs.ios-build.result == 'success' || (inputs.platforms == 'android' && needs.ios-build.result == 'skipped'))"
+    );
+    expect(buildWorkflow).toContain('platforms: ${{ inputs.platforms }}');
+    expect(releaseWorkflow).toMatch(/testflight:[\s\S]*?if: \$\{\{ inputs\.platforms != 'android' \}\}/);
+    expect(releaseWorkflow).toMatch(
+      /android-release:[\s\S]*?if: \$\{\{ inputs\.platforms != 'ios' \}\}/
+    );
+    expect(releaseWorkflow).toContain('node scripts/release-notes.mjs --platform "$PLATFORMS"');
+    expect(releaseWorkflow).toContain("makeLatest: ${{ inputs.platforms == 'ios' && 'false' || 'legacy' }}");
+  });
+
+  it('refuses any published build number an earlier artifact already consumed', () => {
+    expect(packageScripts['release:check-build']).toBe('node scripts/check-build-number.mjs');
+    expect(buildWorkflow).toMatch(
+      /name: Require an unused build number[\s\S]*?asc_latest_build\.rb[\s\S]*?check-build-number\.mjs --require-origin --ignore-tag "\$TAG" --asc-max "\$ASC_MAX"/
+    );
+    expect(iosBuildWorkflow).toMatch(
+      /name: Require an unused build number \(TestFlight dev build\)\s*\n\s*if: \$\{\{ inputs\.upload_testflight \}\}[\s\S]*?check-build-number\.mjs --require-origin --build "\$BUILD" --asc-max "\$ASC_MAX"/
+    );
+    // The number is checked before the long archive, not after the upload.
+    expect(iosBuildWorkflow.indexOf('Require an unused build number')).toBeLessThan(
+      iosBuildWorkflow.indexOf('- name: Archive')
+    );
+  });
+
+  it('serializes TestFlight dev uploads with releases because both consume numbers', () => {
+    expect(buildWorkflow).toContain(
+      "(inputs.publish_release || inputs.upload_testflight) && 'uniclip-release'"
+    );
   });
 
   it('serializes full releases without cancelling one already in progress', () => {

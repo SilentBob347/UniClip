@@ -8,25 +8,35 @@
  * rejects 4-segment marketing versions) AND still bumps the build counter
  * (never reset), so the release stays tagged `v${newVersion}.${versionCode}`
  * and the Android self-updater's comparison remains monotonic across the
- * version change.
+ * version change. Like bump-build, the next counter skips past every release
+ * tag on origin and past `--after N` (see scripts/build-counter.mjs).
  *
  * Usage:
- *   node scripts/bump-version.mjs <major.minor.patch> [--dry-run]
+ *   node scripts/bump-version.mjs <major.minor.patch> [--after N] [--dry-run]
  *   npm run release:version -- 1.4.0
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { highestBuildInTags, listReleaseTags } from './build-counter.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const appJsonPath = join(root, 'app.json');
 
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
-const newVersion = args.find((a) => !a.startsWith('--'));
+const afterIndex = args.indexOf('--after');
+const after = afterIndex === -1 ? 0 : Number(args[afterIndex + 1]);
+const newVersion = args.find(
+  (a, index) => !a.startsWith('--') && (afterIndex === -1 || index !== afterIndex + 1)
+);
 
 if (!newVersion) {
-  console.error('Usage: node scripts/bump-version.mjs <major.minor.patch> [--dry-run]');
+  console.error('Usage: node scripts/bump-version.mjs <major.minor.patch> [--after N] [--dry-run]');
+  process.exit(1);
+}
+if (!Number.isSafeInteger(after) || after < 0) {
+  console.error('✗ --after requires a non-negative integer build number');
   process.exit(1);
 }
 if (!/^\d+\.\d+\.\d+$/.test(newVersion)) {
@@ -58,8 +68,10 @@ if (!Number.isFinite(prevCode) || !Number.isFinite(prevIosBuild)) {
   process.exit(1);
 }
 
-// Build counter keeps climbing across the marketing-version change (never reset).
-const next = Math.max(prevCode, prevIosBuild) + 1;
+// Build counter keeps climbing across the marketing-version change (never reset),
+// and past numbers that single-platform releases already consumed.
+const highestTag = highestBuildInTags(listReleaseTags(root).tags);
+const next = Math.max(prevCode, prevIosBuild, highestTag, after) + 1;
 const tag = `v${newVersion}.${next}`;
 
 expo.version = newVersion;
@@ -95,5 +107,6 @@ console.log('  2. Commit and push the release metadata:');
 console.log(`       git add app.json CHANGES.md CHANGES.en.md changelogs`);
 console.log(`       git commit -m "chore(release): ${tag.slice(1)}"`);
 console.log(`       git push origin main`);
-console.log('  3. In GitHub Actions, run "build" on main with publish_release enabled.');
-console.log(`     CI will create ${tag} only after every check and both platform builds pass.`);
+console.log('  3. In GitHub Actions, run "build" on main with publish_release enabled and');
+console.log('     platforms set to both, android, or ios.');
+console.log(`     CI will create ${tag} only after every check and the selected builds pass.`);

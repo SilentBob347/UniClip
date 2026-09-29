@@ -39,7 +39,7 @@
     "test:e2e:environment": "node --test e2e/environment/tests/*.test.mjs",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:ci": "npm test -- --runInBand && ruby scripts/asc_whats_to_test_test.rb && npm run test:coverage -- --runInBand",
+    "test:ci": "npm test -- --runInBand && ruby scripts/asc_whats_to_test_test.rb && ruby scripts/asc_latest_build_test.rb && npm run test:coverage -- --runInBand",
     "check:ci": "npm run check:quality && npm run test:ci",
     "release:validate": "node scripts/validate-release.mjs && node scripts/validate-unified-engine-core-source.mjs && node scripts/release-notes.mjs --check",
     "release:check": "npm run release:validate && npm run check:ci",
@@ -47,6 +47,7 @@
     "release:build": "node scripts/bump-build.mjs",
     "release:alpha": "node scripts/bump-build.mjs --alpha",
     "release:version": "node scripts/bump-version.mjs",
+    "release:check-build": "node scripts/check-build-number.mjs",
     "postinstall": "node scripts/patch-expo-sharing-android.cjs && node scripts/patch-apple-targets.cjs && node scripts/patch-react-native-screens-search-tab.cjs && node scripts/patch-react-native-screens-tab-bar-animation.cjs",
     "prepare": "husky",
     "doctor": "npx react-doctor@latest"

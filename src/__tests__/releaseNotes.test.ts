@@ -102,6 +102,34 @@ describe('localized release note generation', () => {
     );
   });
 
+  it.each([
+    ['ios', '### iOS\n- 中文通用\n- 中文 iOS', '### Android'],
+    ['android', '### Android\n- 中文通用\n- 中文 Android', '### iOS'],
+  ])('limits a %s-only release body to that platform', (platform, included, excluded) => {
+    const result = spawnSync(
+      process.execPath,
+      [scriptPath, '--root', root, '--out-dir', outDir, '--platform', platform],
+      { encoding: 'utf8' }
+    );
+
+    expect(result.status).toBe(0);
+    const github = readFileSync(join(outDir, 'release-notes-github.md'), 'utf8');
+    expect(github).toContain(included);
+    expect(github).not.toContain(excluded);
+    expect(readFileSync(join(outDir, 'changelogs', 'v1.3.0.161.android.en.md'), 'utf8')).toBe(
+      '- English common\n- English Android\n'
+    );
+  });
+
+  it('rejects an unknown platform selection', () => {
+    const result = spawnSync(process.execPath, [scriptPath, '--root', root, '--platform', 'web'], {
+      encoding: 'utf8',
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('--platform must be both, android, or ios');
+  });
+
   it('checks committed changelog files without writing release artifacts', () => {
     const generate = spawnSync(process.execPath, [scriptPath, '--root', root, '--out-dir', root], {
       encoding: 'utf8',

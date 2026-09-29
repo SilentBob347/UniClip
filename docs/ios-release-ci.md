@@ -10,7 +10,7 @@ Automated iOS build + TestFlight upload, modeled on the native iOS app repo's
 ```
 push (any branch)       ──▶ code-style + unit-tests + android-build
 manual iOS dev build   ──▶ build-ios (optional TestFlight upload)
-manual full release    ──▶ validate + both builds ──▶ create tag ──▶ release
+manual release         ──▶ validate + selected builds ──▶ create tag ──▶ release
 ```
 
 | Workflow            | Runs on                       | Does                                                                                                                                |
@@ -66,16 +66,21 @@ via `asc_profiles.rb install`.
 
 ## Cutting a release
 
-1. **Bump the iOS build number** — `expo.ios.buildNumber` in `app.json` must be
-   unique within the marketing version (`altool` does not auto-bump). Bump
-   `expo.version` too if it's a new marketing version. Update `CHANGES.md` and
-   `CHANGES.en.md` with matching tags.
+1. **Bump the build counter** with `npm run release:build` (see
+   `docs/RELEASE.md`). The counter is shared by both platforms and by every
+   published artifact, so the number must be newer than every release tag and
+   every build already on App Store Connect. Bump `expo.version` too if it's a
+   new marketing version. Update `CHANGES.md` and `CHANGES.en.md` with
+   matching tags.
 2. Commit and push the release metadata to `main`. Do not create the tag.
-3. Actions → `build` → _Run workflow_ on `main`; enable `publish_release` and
-   leave the dev-build inputs empty.
-4. CI validates metadata and both localized release-note sections, builds
-   Android + iOS, creates the tag only after both builds succeed, then uploads
-   the `.ipa` to TestFlight and publishes the APKs to GitHub and R2.
+3. Actions → `build` → _Run workflow_ on `main`; enable `publish_release`, pick
+   `platforms` (`both`, `android`, or `ios`), and leave the dev-build inputs
+   empty.
+4. CI validates metadata and both localized release-note sections, refuses a
+   build number that a release tag or App Store Connect already has, builds
+   the selected platforms, creates the tag only after those builds succeed,
+   then uploads the `.ipa` to TestFlight and/or publishes the APK to GitHub
+   and R2.
 5. In App Store Connect → TestFlight: wait for processing, answer export
    compliance, add the build to a testing group.
 
@@ -87,10 +92,17 @@ via `asc_profiles.rb install`.
   `.ipa`.
 - check `upload_testflight` → additionally uploads that build straight to
   **TestFlight**, without touching the Android release. This is the
-  clean "ship an iOS dev build to try" path.
-- `build_number` (optional) overrides the CFBundleVersion for this run.
+  clean "ship an iOS dev build to try" path. The upload consumes a number of
+  the shared build counter, so the job fails before archiving when that
+  number is not newer than every release tag and App Store Connect build.
+  Bump with `npm run release:build` and push first.
+- `build_number` (optional) overrides the CFBundleVersion for this run; the
+  same uniqueness check applies to the override.
 
-To ship both platforms, enable `publish_release`. CI requires matching tags in
+A number consumed this way is not tagged. The next release's check sees it on
+App Store Connect and asks for `npm run release:build -- --after N`.
+
+To publish a release, enable `publish_release`. CI requires matching tags in
 `CHANGES.md` and `CHANGES.en.md`; an Alpha tag (`-alpha.N`) marks the
 GitHub release as a prerelease. The iOS side always goes to TestFlight,
 with localized "What to Test" notes for `zh-Hans` and `en-US`; missing build

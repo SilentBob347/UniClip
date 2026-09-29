@@ -33,8 +33,29 @@ The build counter **must increase monotonically** across every published
 artifact, including betas and marketing-version bumps (it is never reset). The
 rule is simple:
 
-> Every published tag bumps the build counter by 1;
+> Every published artifact bumps the build counter by 1;
 > `versionCode` and `ios.buildNumber` are both set to it.
+
+"Every published artifact" includes a two-platform release, an Android-only
+release, an iOS-only release, and a TestFlight dev upload. A number consumed by
+one platform is never reused by the other, so a single platform may skip
+numbers:
+
+| Published            | Platforms | Build | Android sees | iOS sees |
+| -------------------- | --------- | ----- | ------------ | -------- |
+| v2.0.0.187           | Android   | 187   | 187          | —        |
+| v2.0.0.188           | iOS       | 188   | —            | 188      |
+| TestFlight dev build | iOS       | 189   | —            | 189      |
+| v2.0.0.190           | both      | 190   | 190          | 190      |
+
+Two ledgers record consumed numbers: release tags on origin (every release is
+tagged, whatever its platforms) and App Store Connect (TestFlight dev uploads
+are not tagged). `npm run release:build`, `release:alpha`, and
+`release:version` pick the next number past both `app.json` and the highest
+release tag on origin. `npm run release:check-build` refuses a number that a
+tag already used; CI runs the same check with App Store Connect included
+before every release and every TestFlight dev upload. When that check reports
+an untagged number, bump past it with `npm run release:build -- --after N`.
 
 | Release            | expo.version (iOS marketing) | build counter | Android versionName | iOS review? |
 | ------------------ | ---------------------------- | ------------- | ------------------- | ----------- |
@@ -262,17 +283,29 @@ git push origin main
 ```
 
 In GitHub Actions, open `build`, choose **Run workflow** on `main`, enable
-`publish_release`, and leave the iOS dev-build inputs empty. The workflow then:
+`publish_release`, choose `platforms` (`both`, `android`, or `ios`), and leave
+the iOS dev-build inputs empty. The workflow then:
 
 1. Validates that Android/iOS build counters and both changelog files describe
    the same release, and that both top sections can generate release notes.
-2. Runs style checks, unit tests, and both Android and iOS builds.
-3. Creates the derived tag only after every check and both builds succeed.
-4. Uploads the same validated iOS artifact to TestFlight.
-5. Publishes a GitHub Release with the `arm64-v8a` APK supported by the unified
-   engine release.
-6. Uploads the immutable Android APK to Cloudflare R2 and registers a Ready release in FlareRelease.
-7. Leaves Stable and Beta unchanged until a maintainer explicitly promotes the release in FlareRelease.
+2. Refuses the build number if a release tag or App Store Connect already has
+   it (see "Build Counter Rule").
+3. Runs style checks, unit tests, and the selected Android and/or iOS builds.
+4. Creates the derived tag only after every check and the selected builds
+   succeed.
+5. iOS selected: uploads the same validated iOS artifact to TestFlight.
+6. Publishes a GitHub Release whose body covers the selected platforms. With
+   Android, it carries the `arm64-v8a` APK supported by the unified engine
+   release. An iOS-only release has no APK and never becomes GitHub's
+   "latest" release.
+7. Android selected: uploads the immutable APK to Cloudflare R2 and registers
+   a Ready release in FlareRelease, leaving Stable and Beta unchanged until a
+   maintainer explicitly promotes it. The Android updater reads FlareRelease
+   channels, so an iOS-only release never offers Android users an update.
+
+A single-platform release still uses the shared `CHANGES.md` block; only the
+platform that ships reads its notes. Write the block for the platform being
+released.
 
 FlareRelease registration uses the `UniClipboard` organization's
 `FLARE_RELEASE_ACCESS_CLIENT_ID` and `FLARE_RELEASE_ACCESS_CLIENT_SECRET`

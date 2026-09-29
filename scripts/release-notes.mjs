@@ -35,8 +35,13 @@
  *   - release-notes-testflight{,.en}.txt       localized iOS plain text
  *   - changelogs/<tag>.{android,ios}.{zh,en}.md versioned client changelogs
  *
+ * `--platform android|ios` limits the GitHub Release body to the platform a
+ * single-platform release actually ships; the per-platform files are always
+ * written because the changelog block is shared.
+ *
  * Usage:
- *   node scripts/release-notes.mjs [--out-dir <dir>] [--root <repo>] [--print | --check]
+ *   node scripts/release-notes.mjs [--out-dir <dir>] [--root <repo>]
+ *     [--platform both|android|ios] [--print | --check]
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -58,6 +63,10 @@ const root = resolve(argValue('--root', import.meta.dirname + '/..'));
 const outDir = resolve(argValue('--out-dir', process.cwd()));
 const printOnly = process.argv.includes('--print');
 const checkOnly = process.argv.includes('--check');
+const platform = argValue('--platform', 'both');
+if (!['both', 'android', 'ios'].includes(platform)) {
+  fail(`--platform must be both, android, or ios, got "${platform}"`);
+}
 
 const VERSION_LINE = /^v\d+\.\d+\.\d+/;
 const HEADING = /^#{1,6}\s*(.+?)\s*$/;
@@ -124,11 +133,14 @@ function platformSection(title, notes, emptyLabel) {
 }
 
 function languageSection(title, locale, changelog, emptyLabel) {
-  return `## [${locale}] ${title}\n\n${platformSection(
-    'Android',
-    changelog.androidNotes,
-    emptyLabel
-  )}\n\n${platformSection('iOS', changelog.iosNotes, emptyLabel)}`;
+  const sections = [];
+  if (platform !== 'ios') {
+    sections.push(platformSection('Android', changelog.androidNotes, emptyLabel));
+  }
+  if (platform !== 'android') {
+    sections.push(platformSection('iOS', changelog.iosNotes, emptyLabel));
+  }
+  return `## [${locale}] ${title}\n\n${sections.join('\n\n')}`;
 }
 
 const chinese = parseChangelog('CHANGES.md');
