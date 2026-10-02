@@ -17,7 +17,6 @@
     "configured": "Configured",
     "credentialConfigured": "Access token saved",
     "configuredCount": "{{count}} nodes configured",
-    "savedRetrying": "Saved. Connection is retrying.",
     "footer": "Use an HTTP or HTTPS address. The access token is kept only in this device's secure storage.",
     "error": {
       "saveFailed": "Could not save relay",
@@ -25,6 +24,48 @@
       "invalidUrl": "Enter a valid HTTP or HTTPS address",
       "duplicate": "This relay already exists",
       "notFound": "This relay no longer exists"
+    },
+    "builtIn": {
+      "title": "Built-in relays",
+      "footer": "Read-only. These relays come with the app's network engine. Listing a relay here does not mean it is reachable.",
+      "loading": "Loading relays…",
+      "loadFailed": "Could not load built-in relays",
+      "retryHint": "Tap anywhere on this row to retry"
+    },
+    "source": {
+      "builtIn": "Built-in"
+    },
+    "region": {
+      "na-east": "North America East",
+      "na-west": "North America West",
+      "eu": "Europe",
+      "asia-pacific": "Asia Pacific"
+    },
+    "usage": {
+      "inEffect": "Configured on the running node",
+      "notApplied": "Not applied to the running node",
+      "replacedByCustom": "Not used while custom relays are set",
+      "off": "Relays are off"
+    },
+    "status": {
+      "builtIn": "Using built-in relays",
+      "custom": "Using your custom relays",
+      "off": "Relays are off",
+      "nodeNotStarted": "The network node has not started yet.",
+      "pending": "The running node still uses the previous setting. It changes after the network node is fully rebuilt, for example when the app restarts.",
+      "builtInHint": "No custom relay is set, so the app uses the built-in list.",
+      "customHint": "Built-in relays are not used while a custom relay is set. Remove it to go back to the built-in list.",
+      "offHint": "Relays are turned off, so no relay is used.",
+      "pendingTitle": "Saved, not applied yet"
+    },
+    "page": {
+      "title": "Relay",
+      "network": "Network"
+    },
+    "retry": "Retry",
+    "listFooter": "Adding a custom relay replaces the built-in list. The access token stays in this device's secure storage.",
+    "editor": {
+      "title": "Relay node"
     }
   },
   "space": {

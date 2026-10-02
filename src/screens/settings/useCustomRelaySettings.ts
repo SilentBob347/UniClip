@@ -1,12 +1,23 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import type { RelayOverview } from '@/features/relayOverview';
 import {
+  loadRelayOverview,
   refreshCustomRelays,
   saveCustomRelay,
+  subscribeRelayChanges,
   type CustomRelay,
   type RelaySaveOutcome,
 } from '@/features/relaySettings';
 import { useSettingsStore } from '@/stores';
+
+/** Engine may still be starting when the page opens; retry quietly before showing an error. */
+export const OVERVIEW_RETRY_DELAYS_MS = [1000, 2000, 4000];
+
+export type RelayOverviewState =
+  | { status: 'loading' }
+  | { status: 'error' }
+  | { status: 'ready'; value: RelayOverview };
 
 export function useCustomRelaySettings() {
   const legacyUrls = useSettingsStore((state) => state.config?.customRelayUrls ?? []);
@@ -17,7 +28,31 @@ export function useCustomRelaySettings() {
   const pendingLegacyUrls = useRef(initialLegacyUrls).current;
   const migrationPending = useRef(pendingLegacyUrls.length > 0);
   const operationGeneration = useRef(0);
+  const [overview, setOverview] = useState<RelayOverviewState>({ status: 'loading' });
+  const overviewGeneration = useRef(0);
   const saveQueue = useRef<Promise<void>>(Promise.resolve());
+
+  // Engine owns the overview; the latest read always wins and a failure is never shown as empty.
+  const readOverview = useCallback(async (): Promise<void> => {
+    const generation = ++overviewGeneration.current;
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        const value = await loadRelayOverview();
+        if (generation === overviewGeneration.current) setOverview({ status: 'ready', value });
+        return;
+      } catch {
+        if (generation !== overviewGeneration.current) return;
+        const delay = OVERVIEW_RETRY_DELAYS_MS[attempt];
+        if (delay === undefined) {
+          setOverview({ status: 'error' });
+          return;
+        }
+        await new Promise<void>((resolve) => setTimeout(resolve, delay));
+        if (generation !== overviewGeneration.current) return;
+      }
+    }
+  }, []);
+
 
   const load = useCallback(async (): Promise<CustomRelay[]> => {
     const legacyUrlsToMigrate = migrationPending.current ? pendingLegacyUrls : [];
@@ -29,7 +64,7 @@ export function useCustomRelaySettings() {
     return current;
   }, [pendingLegacyUrls, updateConfig]);
 
-  const refresh = useCallback(async (): Promise<CustomRelay[]> => {
+  const refreshCustom = useCallback(async (): Promise<CustomRelay[]> => {
     const generation = ++operationGeneration.current;
     await saveQueue.current;
     const current = await load();
@@ -39,6 +74,11 @@ export function useCustomRelaySettings() {
     }
     return current;
   }, [load]);
+
+  const refresh = useCallback((): Promise<CustomRelay[]> => {
+    void readOverview();
+    return refreshCustom();
+  }, [readOverview, refreshCustom]);
 
   useEffect(() => {
     let active = true;
@@ -57,6 +97,27 @@ export function useCustomRelaySettings() {
       active = false;
     };
   }, [load]);
+
+  useEffect(() => {
+    void readOverview();
+  }, [readOverview]);
+
+  // Another screen's save (or the rebuild that follows it) changes what Engine reports.
+  useEffect(
+    () =>
+      subscribeRelayChanges(() => {
+        void readOverview();
+        void refreshCustom().catch(() => undefined);
+      }),
+    [readOverview, refreshCustom]
+  );
+
+  // Both reads can lose a race with Engine startup, so one retry re-reads the overview and the
+  // custom list together.
+  const retryOverview = useCallback(async (): Promise<void> => {
+    setOverview({ status: 'loading' });
+    await Promise.all([readOverview(), refreshCustom().catch(() => undefined)]);
+  }, [readOverview, refreshCustom]);
 
   const save = useCallback(
     (input: Parameters<typeof saveCustomRelay>[0]): Promise<RelaySaveOutcome> => {
@@ -84,5 +145,5 @@ export function useCustomRelaySettings() {
     [load]
   );
 
-  return { relays, refresh, save, initialRefreshFailed };
+  return { relays, refresh, save, initialRefreshFailed, overview, retryOverview };
 }

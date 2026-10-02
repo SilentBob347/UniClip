@@ -17,6 +17,10 @@ import { iosAccentColor } from '@/theme/iosDesignTokens';
 import { LanServerEditorSheet } from '@/screens/settings/ios/LanServerEditorSheet';
 import { SyncChannelConfirmationSheet } from '@/screens/settings/SyncChannelConfirmationSheet';
 import { DevicesRootPage } from './devices/DevicesRootPage';
+import { useCustomRelaySettings } from '@/screens/settings/useCustomRelaySettings';
+import { devicesRoutePath, type DevicesRoute } from './devices/devicesRoutes';
+import { RelayEditorPage } from './devices/RelayEditorPage';
+import { RelaySettingsPage } from './devices/RelaySettingsPage';
 import { SpaceSettingsPage } from './devices/SpaceSettingsPage';
 
 const fillModifier = frame({ maxWidth: Infinity, maxHeight: Infinity });
@@ -30,6 +34,9 @@ const NAVIGATION_CHROME: IosPageChrome = { kind: 'navigation' };
 export function DevicesScreen({ deviceId, notificationNavigationRequestId }: SpaceDeviceTarget) {
   const { t } = useTranslation('settings');
   const [path, setPath] = useState<string[]>([]);
+  // The relay the editor page is on ('' = a new one); owned here, the stable parent of the stack.
+  const [editingRelayUrl, setEditingRelayUrl] = useState('');
+  const openRoute = useCallback((route: DevicesRoute) => setPath(devicesRoutePath(route)), []);
   useHideTabBarOnSubPage(path);
   const [setupMode, setSetupMode] = useState<AddSyncConnectionMode | null>(null);
   const [editingLanServerId, setEditingLanServerId] = useState<string | 'new' | null>(null);
@@ -37,6 +44,8 @@ export function DevicesScreen({ deviceId, notificationNavigationRequestId }: Spa
   const [showP2pConfirmation, setShowP2pConfirmation] = useState(false);
   const [isConfirmingP2p, setIsConfirmingP2p] = useState(false);
   const deviceManagement = useSpaceDeviceManagement({ allowHighImpactActions: true });
+  // One controller for the space settings entry row and the relay page (stable parent owns it).
+  const relay = useCustomRelaySettings();
   const pendingLanIntent = usePendingLanConnectStore((state) => state.intent);
   const consumePendingLanIntent = usePendingLanConnectStore((state) => state.consume);
   const notificationHandled = useRef<number | null>(null);
@@ -104,7 +113,7 @@ export function DevicesScreen({ deviceId, notificationNavigationRequestId }: Spa
             <DevicesRootPage
               deviceManagement={deviceManagement}
               onOpenSetup={setSetupMode}
-              onOpenSpaceSettings={() => setPath(['spaceSettings'])}
+              onOpenSpaceSettings={() => openRoute('spaceSettings')}
               onRequestP2pConfirmation={requestP2pConfirmation}
               onAddLanServer={() => {
                 setLanServerIntent(null);
@@ -119,8 +128,30 @@ export function DevicesScreen({ deviceId, notificationNavigationRequestId }: Spa
             <NavigationDestination value="spaceSettings">
               <SpaceSettingsPage
                 deviceManagement={deviceManagement}
+                relay={relay}
+                onOpenRelay={() => openRoute('relay')}
                 onSwitchSpace={() => setSetupMode('switch')}
                 onLeft={() => setPath([])}
+              />
+            </NavigationDestination>
+            <NavigationDestination value="relay">
+              <RelaySettingsPage
+                relay={relay}
+                onAddRelay={() => {
+                  setEditingRelayUrl('');
+                  openRoute('relayEditor');
+                }}
+                onEditRelay={(relayUrl) => {
+                  setEditingRelayUrl(relayUrl);
+                  openRoute('relayEditor');
+                }}
+              />
+            </NavigationDestination>
+            <NavigationDestination value="relayEditor">
+              <RelayEditorPage
+                relay={relay}
+                editingUrl={editingRelayUrl}
+                onClose={() => openRoute('relay')}
               />
             </NavigationDestination>
           </NavigationStack>

@@ -17,7 +17,6 @@
     "configured": "已设置",
     "credentialConfigured": "已保存访问令牌",
     "configuredCount": "已设置 {{count}} 个节点",
-    "savedRetrying": "已保存，连接正在重试",
     "footer": "仅使用 HTTP 或 HTTPS 地址。访问令牌只保存在设备的安全区域。",
     "error": {
       "saveFailed": "无法保存中继节点",
@@ -25,6 +24,48 @@
       "invalidUrl": "请输入有效的 HTTP 或 HTTPS 地址",
       "duplicate": "该中继节点已存在",
       "notFound": "该中继节点已不存在"
+    },
+    "builtIn": {
+      "title": "内置中继节点",
+      "footer": "只读。这些节点随应用的网络引擎提供。列出节点并不代表它当前可连通。",
+      "loading": "正在加载中继节点…",
+      "loadFailed": "无法加载内置中继节点",
+      "retryHint": "点按此行任意位置重试"
+    },
+    "source": {
+      "builtIn": "内置"
+    },
+    "region": {
+      "na-east": "北美东部",
+      "na-west": "北美西部",
+      "eu": "欧洲",
+      "asia-pacific": "亚太"
+    },
+    "usage": {
+      "inEffect": "运行中的节点已按此配置",
+      "notApplied": "尚未应用到运行中的节点",
+      "replacedByCustom": "设置自定义节点后不使用",
+      "off": "中继已关闭"
+    },
+    "status": {
+      "builtIn": "正在使用内置中继节点",
+      "custom": "正在使用你的自定义中继节点",
+      "off": "中继已关闭",
+      "nodeNotStarted": "网络节点尚未启动。",
+      "pending": "运行中的节点仍使用之前的设置。需要完整重建网络节点后才会改变，例如重启应用。",
+      "builtInHint": "未设置自定义中继节点，应用使用内置列表。",
+      "customHint": "设置自定义中继节点期间不使用内置节点。移除后会回到内置列表。",
+      "offHint": "中继已关闭，不使用任何中继节点。",
+      "pendingTitle": "已保存，尚未应用"
+    },
+    "page": {
+      "title": "中继",
+      "network": "网络"
+    },
+    "retry": "重试",
+    "listFooter": "添加自定义中继节点后，将替代内置列表。访问令牌只保存在本设备的安全存储中。",
+    "editor": {
+      "title": "中继节点"
     }
   },
   "space": {

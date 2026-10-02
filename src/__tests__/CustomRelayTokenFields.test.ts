@@ -6,8 +6,8 @@ function source(relativePath: string): string {
 }
 
 it('keeps relay tokens out of password-specific fields on both platforms', () => {
-  const ios = source('screens/settings/CustomRelaySection.ios.tsx');
-  const android = source('screens/settings/CustomRelaySection.android.tsx');
+  const ios = source('screens/ios/devices/RelayEditorPage.tsx');
+  const android = source('screens/settings/android/RelayEditorSection.tsx');
   const androidTokenField = android.slice(
     android.indexOf('testID="relay-token-input"'),
     android.indexOf('{error ?')
@@ -18,11 +18,34 @@ it('keeps relay tokens out of password-specific fields on both platforms', () =>
   expect(androidTokenField).not.toMatch(/\bsecure\b/);
 });
 
-it('opens the Android relay editor full screen above the keyboard', () => {
-  const android = source('screens/settings/CustomRelaySection.android.tsx');
+it('edits a relay on its own page above the relay list, clear of the keyboard', () => {
+  const editor = source('screens/settings/android/RelayEditorSection.tsx');
+  const list = source('screens/settings/android/RelaySettingsSection.tsx');
 
-  expect(android).toContain('<ModalBottomSheet skipPartiallyExpanded');
-  expect(android).toContain(
-    '...(editingUrl !== null ? [fillMaxSize(), imePadding()] : [fillMaxWidth()])'
-  );
+  expect(editor).not.toContain('ModalBottomSheet');
+  expect(editor).toContain('modifiers={[fillMaxWidth(), imePadding()]}');
+  // The list page never holds editor state: back from the editor must return to the list.
+  expect(list).not.toContain('editingUrl');
+  expect(list).not.toContain('relay-url-input');
+});
+
+it('labels the Android relay fields through the shared text field, like other forms', () => {
+  const editor = source('screens/settings/android/RelayEditorSection.tsx');
+
+  expect(editor).toContain('label={t(\'relay.url\')}');
+  expect(editor).toContain('label={t(\'relay.token\')}');
+  // No hand-drawn caption above a field.
+  expect(editor).not.toMatch(/<ComposeText[^>]*>\{t\('relay\.(url|token)'\)\}<\/ComposeText>/);
+});
+
+it('gives Android forms one text field look, filled and rounded, instead of stock outlines', () => {
+  const field = source('components/ui/AppTextField.android.tsx');
+  const joinSheet = source('components/AddSyncConnectionSheet.android.tsx');
+
+  expect(field).toContain("variant = 'filled'");
+  expect(field).toContain('useFilledTextFieldStyle');
+  // The create/join sheet cannot use AppTextField (error state, leading icon, IME actions), so it
+  // must use Material's TextField with the shared style rather than OutlinedTextField.
+  expect(joinSheet).not.toContain('OutlinedTextField');
+  expect(joinSheet).toContain('useFilledTextFieldStyle');
 });

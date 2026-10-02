@@ -2,8 +2,10 @@ import { describe, expect, it, jest } from '@jest/globals';
 jest.mock('app-group-store', () => ({ getEngineLogFileUris: () => [] }));
 import {
   configureRelaySettings,
+  loadRelayOverview,
   refreshCustomRelays,
   saveCustomRelay,
+  subscribeRelayChanges,
   type CustomRelay,
   type RelaySettingsApi,
 } from '../features/relaySettings';
@@ -12,6 +14,12 @@ const relay = (url: string, credentialConfigured = false): CustomRelay => ({ url
 function api(overrides: Partial<RelaySettingsApi> = {}): RelaySettingsApi {
   return {
     queryCustomRelays: jest.fn<RelaySettingsApi['queryCustomRelays']>().mockResolvedValue([]),
+    queryRelayOverview: jest.fn<RelaySettingsApi['queryRelayOverview']>().mockResolvedValue({
+      savedMode: 'builtIn',
+      appliedMode: 'builtIn',
+      changePending: false,
+      entries: [],
+    }),
     addCustomRelay: jest.fn<RelaySettingsApi['addCustomRelay']>().mockResolvedValue({ relays: [] }),
     editCustomRelay: jest.fn<RelaySettingsApi['editCustomRelay']>().mockResolvedValue({ relays: [] }),
     deleteCustomRelay: jest.fn<RelaySettingsApi['deleteCustomRelay']>().mockResolvedValue({ relays: [] }),
@@ -25,6 +33,43 @@ function source(relativePath: string): string {
 }
 
 describe('custom relay settings', () => {
+  it('announces a saved change right away and again once the node rebuild settles', async () => {
+    const listener = jest.fn();
+    const unsubscribe = subscribeRelayChanges(listener);
+    let finishRebuild!: () => void;
+    configureRelaySettings(
+      api({
+        addCustomRelay: jest.fn().mockResolvedValue({ relays: [relay('https://a.example.com')] }),
+        rebuildRelayEndpoint: jest.fn(
+          () => new Promise<void>((resolve) => (finishRebuild = resolve))
+        ),
+      })
+    );
+    const outcome = await saveCustomRelay({ url: 'https://a.example.com', accessToken: '' });
+    expect(listener).toHaveBeenCalledTimes(1);
+    finishRebuild();
+    await outcome.connection;
+    expect(listener).toHaveBeenCalledTimes(2);
+    unsubscribe();
+  });
+
+  it('does not announce a rejected save', async () => {
+    const listener = jest.fn();
+    const unsubscribe = subscribeRelayChanges(listener);
+    configureRelaySettings(
+      api({ addCustomRelay: jest.fn().mockResolvedValue({ relays: [], rejection: 'duplicate' }) })
+    );
+    await saveCustomRelay({ url: 'https://a.example.com', accessToken: '' });
+    expect(listener).not.toHaveBeenCalled();
+    unsubscribe();
+  });
+
+  it('reads the relay overview from Engine and propagates failures instead of returning an empty list', async () => {
+    const failure = new Error('relay store unavailable');
+    configureRelaySettings(api({ queryRelayOverview: jest.fn().mockRejectedValue(failure) }));
+    await expect(loadRelayOverview()).rejects.toBe(failure);
+  });
+
   it('uses Engine data directly when the legacy Mobile cache is empty', async () => {
     const engine = [relay('https://engine.example.com', true)];
     const client = api({ queryCustomRelays: jest.fn().mockResolvedValue(engine) });
@@ -165,16 +210,16 @@ describe('custom relay settings', () => {
     expect(android.indexOf('space.devices.otherTitle')).toBeLessThan(
       android.indexOf("section: 'spaceSettings'")
     );
-    expect(android).not.toContain('<CustomRelaySection />');
-    expect(androidSettings.indexOf('<CustomRelaySection />')).toBeGreaterThan(-1);
-    expect(androidSettings.indexOf('<CustomRelaySection />')).toBeLessThan(
+    expect(android).not.toContain('<RelayEntrySection');
+    expect(androidSettings.indexOf('<RelayEntrySection')).toBeGreaterThan(-1);
+    expect(androidSettings.indexOf('<RelayEntrySection')).toBeLessThan(
       androidSettings.indexOf('<SwitchSpaceRow')
     );
     // iOS 同构:设备页只放「空间设置」入口,中继在切换空间之前
-    expect(iosDevices).not.toContain('<CustomRelaySection />');
+    expect(iosDevices).not.toContain('relay-settings');
     expect(iosDevices).toContain("t('space.settings.title')");
-    expect(ios.indexOf('<CustomRelaySection />')).toBeGreaterThan(-1);
-    expect(ios.indexOf('<CustomRelaySection />')).toBeLessThan(ios.indexOf('space.switch.title'));
+    expect(ios.indexOf('relay-settings')).toBeGreaterThan(-1);
+    expect(ios.indexOf('relay-settings')).toBeLessThan(ios.indexOf('space.switch.title'));
   });
 
 });
