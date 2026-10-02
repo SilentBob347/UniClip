@@ -1,3 +1,14 @@
+v2.0.1.188-alpha.2
+
+### Common
+
+- New: Engine built-in relays are now shown in relay settings
+
+### Android
+
+- Fix: Update sheet actions were unreachable when the release notes were long
+- Improvement: Redesigned background reading settings
+
 v2.0.1.187-alpha.1
 
 ### Android
