@@ -1,3 +1,18 @@
+v2.1.0.191-alpha.2
+
+### Common
+
+- New: Detailed diagnostics also capture network logs and include them in the diagnostic package
+- Improvement: Diagnostic packages flag missing or unreadable sync core logs; clearing app logs no longer deletes sync core logs
+- Improvement: A failed space join distinguishes a wrong space password from an unresponsive inviting device
+- Improvement: Update the sync core to a newer revision that retries database lock contention during startup verification
+
+### Android
+
+- Fix: Receiving a previously deleted file again could restore its old timestamp, size and content
+- Fix: Saving a large received file could create an empty file and show "Save failed"
+- Fix: File attachments that other apps share as text were not passed to Send
+
 v2.1.0.190-alpha.1
 
 ### Common
