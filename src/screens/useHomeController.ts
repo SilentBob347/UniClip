@@ -24,7 +24,7 @@ import {
   p2pDeliveryTranslationOptions,
   p2pDeliveryUpdates,
 } from '@/features/transfer';
-import { ClipboardItem, ClipboardContent } from '@/types/clipboard';
+import { ClipboardItem, ClipboardContent, matchesHistoryRevision } from '@/types/clipboard';
 import { importFileToHistory } from '@/utils/uploadFile';
 import { copyToLocalClipboard } from '@/utils/clipboard';
 import { DisplayKind, getDisplayKind, getDisplayKindLabel } from '@/utils/displayKind';
@@ -43,6 +43,7 @@ import { HOME_LONG_PRESS_MODE } from '@/utils/homeLongPressMode';
 import {
   canSendHistoryItem,
   createHistorySendJob,
+  createHistorySendJobs,
   createTextSendJob,
   releaseHistorySendJob,
 } from '@/utils/historySendJob';
@@ -125,7 +126,7 @@ export function useHomeController(
         ? storeItems
         : storeItems.filter(
             (item) =>
-              pendingDeleteVersions.get(item.profileHash.toLowerCase()) !== item.version
+              !matchesHistoryRevision(item, pendingDeleteVersions.get(item.profileHash.toLowerCase()))
           ),
     [storeItems, pendingDeleteVersions]
   );
@@ -657,13 +658,7 @@ export function useHomeController(
   const handleBatchSendTo = useCallback(() => {
     const selected = items.filter((i) => selectedIds.has(i.profileHash));
     exitSelectMode();
-    presentSendTo(async () =>
-      (
-        await Promise.all(
-          selected.map((item) => createHistorySendJob(item, getDisplayKind(item.type, item.text)))
-        )
-      ).filter((job): job is PendingShareJob => job != null)
-    );
+    presentSendTo(() => createHistorySendJobs(selected));
   }, [items, selectedIds, exitSelectMode, presentSendTo]);
 
   const handleBatchShare = useCallback(async () => {
