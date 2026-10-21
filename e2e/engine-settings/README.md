@@ -17,7 +17,7 @@ or Android application acceptance test.
 
 ## Reproduce
 
-Use Node 22, Python 3, macOS, Xcode, and the repository's existing Rust build tools.
+Use Node 22, Python 3.11 or later, macOS, Xcode, and the repository's existing Rust build tools.
 Do not use a local-source override for the product pin.
 
 1. Fetch the exact `modules/uc-engine/core-source.json` commit in an Engine checkout.
