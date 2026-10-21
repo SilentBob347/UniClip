@@ -2,8 +2,12 @@
 
 ## Source and ownership
 
-Mobile pins Engine `e4ff36c97d244f8c858784097615ef52e3bdcedb`.
-This complete stack contains task8 final `7a9e639f37904f3550571fcc78dc536733838f6f`.
+Mobile pins merged Engine `a8e1b2c912cebbbb835049d3bc343cfe9a036bb7`.
+This source contains the merged settings separation, import-preservation and log-profile changes.
+The main ancestry validator accepts the exact pin. Compared with the previous validated
+`e4ff36c97d244f8c858784097615ef52e3bdcedb`, only an upstream test and planning file differ.
+Production code, binding contracts and Cargo.lock are unchanged. Source-stamped native
+libraries and application packages must still be rebuilt for the merged SHA.
 Mobile base is `7ec4ab73b0b2e6c5cf9c9fcd4c928c97d9ca880d`.
 The module version remains `v1.1.0-rc.23`. The full source commit is authoritative.
 `artifactSource` is `commit`. The product pin has no local path override.
@@ -21,11 +25,11 @@ This PR uses Mobile main as its Git base. Dependencies are
 [#226](https://github.com/UniClipboard/Engine/pull/226),
 [#227](https://github.com/UniClipboard/Engine/pull/227), and coordinated
 [Desktop #2061](https://github.com/UniClipboard/UniClipboard/pull/2061).
-Desktop head `c16388e90711c0b7148801e6dab85bf164536cc8` uses the same source
-in Cargo.toml and every locked Engine package. Pending CI is not passed validation.
-The release-source validator rejects this unmerged source until Engine main
-contains it. Keep that gate enabled. Desktop P1 distribution and cross-repository
-release acceptance remain separate gates.
+Desktop head `6a7d869e97200dac86fadebe370aadad5a0de152` uses the same full merged
+SHA in Cargo.toml and all 18 Engine-sourced Cargo.lock entries. Recheck remote
+source convergence and main reachability before merge or release.
+Pending CI is not passed validation. Keep the main ancestry gate enabled.
+Desktop P1 distribution and cross-repository release acceptance remain separate gates.
 
 ## Actual import and recovery surface
 
@@ -65,9 +69,35 @@ Mobile adds no importer or replacement confirmation. It never calls Stage, sets
 replace_rejected_import to true or deletes staged input. A future importer must
 follow Engine's explicit confirmation and password-validation contract.
 
-## Final-source validation
+## Merged-source validation
 
-The following checks ran on 2026-10-21 UTC against the final e4ff36c9 source.
+The following checks use `a8e1b2c912cebbbb835049d3bc343cfe9a036bb7` on 2026-10-21 UTC.
+The source comparison found only upstream test/planning changes from e4. Production,
+binding and Cargo.lock bytes are unchanged. Native artifacts were rebuilt rather
+than relabeled. Generated Swift/Kotlin still match the formal task8 contract.
+
+| Check | Result | Boundary |
+| --- | --- | --- |
+| Normal main ancestry gate | Exit 0 | Exact pin reachable from fetched official origin/main |
+| Dual-platform native preparation | Exit 0 | Real release XCFramework and arm64 AAR; every native library embeds the merged SHA |
+| TypeScript module build | Exit 0 | Emitted wrapper rebuilt from the existing source |
+| macOS binding E2E | Six cases passed | Real generated Swift/dylib; runtime reports merged SHA and macos |
+| iOS simulator binding E2E | Six cases passed | Real prepared archive; runtime reports merged SHA and ios; owned simulator deleted |
+| Android development Release APK | Exit 0 | Offline retry; actual AAR/merged/stripped/APK provenance matches merged SHA |
+| iOS development Release app and extensions | Exit 0 | Actual unsigned simulator app and keyboard embed merged SHA; Share remains staging-only |
+
+The new receipts are retained separately under the task report library's
+`merged-a8e1b2c9` directory. Previous receipts keep their original source identity.
+The initial Android dependency-refresh command was canceled after ten minutes of HTTP
+wait (exit 130). Only the verified task client received SIGINT. The offline retry
+passed, and byte comparisons establish that it used the newly built local AAR.
+No Mobile UI, physical device or VM acceptance is included. The same six binding
+cases and the same untested Expo/TypeScript service-transition limits apply.
+
+## Previous-source validation
+
+The following checks ran on 2026-10-21 UTC against the previous e4ff36c9 source. These receipts retain that source identity;
+they do not establish the merged SHA in a newly packaged binary.
 Commands, exits, hashes and actual artifacts are in the task report's library.
 
 | Check | Result | Boundary |
