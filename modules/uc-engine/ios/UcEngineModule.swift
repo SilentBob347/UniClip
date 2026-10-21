@@ -84,6 +84,21 @@ public final class UcEngineModule: Module {
 
     Function("coreVersion") { coreVersion() }
 
+    AsyncFunction("queryRejectedConfigImport") {
+      try Self.engineResult {
+        guard let rejected = try self.requireEngine().queryRejectedConfigImport() else {
+          return ["rejection": NSNull()]
+        }
+        let reason: String
+        switch rejected.reason {
+        case .unsupportedFormat: reason = "unsupportedFormat"
+        case .malformedMarker: reason = "malformedMarker"
+        case .missingRuntimeMembers: reason = "missingRuntimeMembers"
+        }
+        return ["rejection": ["reason": reason, "message": rejected.message]]
+      }
+    }.runOnQueue(engineOperationQueue)
+
     AsyncFunction("startEngineDiagnosticCapture") { (durationMs: UInt64) in
       try self.host.prepareDiagnosticLogging()
       return EngineDiagnosticBridge.map(try startLocalDiagnosticCapture(durationMs: durationMs))

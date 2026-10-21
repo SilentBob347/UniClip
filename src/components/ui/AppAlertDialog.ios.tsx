@@ -11,6 +11,7 @@ import {
 
 export interface AppAlertDialogProps {
   visible: boolean;
+  standalone?: boolean;
   onDismiss: () => void;
   title: string;
   message?: string;

@@ -1,8 +1,11 @@
-import { AlertDialog, TextButton, Text as ComposeText } from '@expo/ui/jetpack-compose';
+import { AlertDialog, Host, TextButton, Text as ComposeText } from '@expo/ui/jetpack-compose';
 import type { ColorValue } from 'react-native';
+import { useTheme } from '@/hooks/useTheme';
+import { MATERIAL_SEED_COLOR } from '@/theme/colors';
 
 export interface AppAlertDialogProps {
   visible: boolean;
+  standalone?: boolean;
   onDismiss: () => void;
   title: string;
   message?: string;
@@ -15,6 +18,7 @@ export interface AppAlertDialogProps {
 
 export function AppAlertDialog({
   visible,
+  standalone = false,
   onDismiss,
   title,
   message,
@@ -24,8 +28,9 @@ export function AppAlertDialog({
   onDismissAction,
   containerColor,
 }: AppAlertDialogProps) {
+  const { theme } = useTheme();
   if (!visible) return null;
-  return (
+  const dialog = (
     <AlertDialog
       onDismissRequest={onDismiss}
       colors={containerColor ? { containerColor } : undefined}
@@ -52,4 +57,9 @@ export function AppAlertDialog({
       ) : null}
     </AlertDialog>
   );
+  return standalone ? (
+    <Host colorScheme={theme.isDark ? 'dark' : 'light'} seedColor={MATERIAL_SEED_COLOR}>
+      {dialog}
+    </Host>
+  ) : dialog;
 }

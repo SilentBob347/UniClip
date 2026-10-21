@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { EngineEvent, EngineState } from '@/platform/engine';
+import type { EngineEvent, EngineState, EngineFailure, RejectedConfigImport } from '@/platform/engine';
 
 export type UnifiedEngineStatus = EngineState | 'starting' | 'failed';
 export type PeerConnectionStatus = 'idle' | 'connecting' | 'online' | 'offline';
@@ -9,7 +9,13 @@ export type UnifiedEngineLifecycleFailure = Pick<
   'action' | 'failure'
 >;
 
+export type ConfigImportStatus =
+  | { kind: 'unchecked' }
+  | { kind: 'checked'; rejection: RejectedConfigImport | null }
+  | { kind: 'unavailable'; failure: EngineFailure | null };
+
 export interface UnifiedEngineSnapshot {
+  configImportStatus: ConfigImportStatus;
   status: UnifiedEngineStatus;
   isStarted: boolean;
   lastEvent: EngineEvent | null;
@@ -24,6 +30,7 @@ export interface UnifiedEngineSnapshot {
 export function createInitialUnifiedEngineSnapshot(): UnifiedEngineSnapshot {
   return {
     status: 'stopped',
+    configImportStatus: { kind: 'unchecked' },
     isStarted: false,
     lastEvent: null,
     lastError: null,

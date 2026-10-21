@@ -29,6 +29,7 @@ import { startPostHogAnalytics, stopPostHogAnalytics } from './src/support/obser
 import { getSpaceSetupCompletion } from './src/features/space';
 import { useShareSheetStore } from './src/stores/shareSheetStore';
 import { DeviceTrustDecision } from './src/components/DeviceTrustDecision';
+import { ConfigImportNotice } from './src/components/ConfigImportNotice';
 import { DeviceTrustNotificationObserver } from './src/components/DeviceTrustNotificationObserver';
 import { SpaceOperationResult } from './src/components/SpaceOperationResult';
 import { LanQrScannerHost } from './src/components/LanQrScannerHost';
@@ -318,6 +319,7 @@ export default function App() {
         <DeviceTrustNotificationObserver />
         <AppNavigator />
         <LanQrScannerHost />
+        <ConfigImportNotice />
         {shareReceiveOverlay !== null && (
           <View style={StyleSheet.absoluteFill}>
             <ShareReceiveRedirector

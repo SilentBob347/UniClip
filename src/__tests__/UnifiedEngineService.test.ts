@@ -62,6 +62,7 @@ describe('UnifiedEngineService', () => {
     const shutdown = jest.fn(async () => undefined);
     const shutdownUntilComplete = jest.fn(async () => pendingEvent.resolve(null));
     const service = new UnifiedEngineService({
+      queryRejectedConfigImport: async () => null,
       start: async () => undefined,
       shutdown,
       shutdownUntilComplete,
@@ -87,6 +88,7 @@ describe('UnifiedEngineService', () => {
     const refreshPeerConnections = jest.fn(async () => refreshReport(0));
     const service = new UnifiedEngineService(
       {
+        queryRejectedConfigImport: async () => null,
         start: async () => undefined,
         shutdown: async () => pendingEvent.resolve(null),
         shutdownUntilComplete: async () => pendingEvent.resolve(null),
@@ -116,6 +118,7 @@ describe('UnifiedEngineService', () => {
     const snapshots: UnifiedEngineSnapshot[] = [];
     const service = new UnifiedEngineService(
       {
+        queryRejectedConfigImport: async () => null,
         start: async () => undefined,
         shutdown: async () => pendingEvent.resolve(null),
         shutdownUntilComplete: async () => pendingEvent.resolve(null),
@@ -140,6 +143,7 @@ describe('UnifiedEngineService', () => {
     const pendingEvent = deferred<EngineEvent | null>();
     const notifyConnectivityOpportunity = jest.fn(async (_reason: string) => undefined);
     const service = new UnifiedEngineService({
+      queryRejectedConfigImport: async () => null,
       start: async () => undefined,
       shutdown: async () => pendingEvent.resolve(null),
       shutdownUntilComplete: async () => pendingEvent.resolve(null),
@@ -208,6 +212,7 @@ describe('UnifiedEngineService', () => {
     const snapshots: UnifiedEngineSnapshot[] = [];
     const service = new UnifiedEngineService(
       {
+        queryRejectedConfigImport: async () => null,
         start: async () => undefined,
         shutdown,
         shutdownUntilComplete: shutdown,
@@ -245,6 +250,7 @@ describe('UnifiedEngineService', () => {
     const snapshots: UnifiedEngineSnapshot[] = [];
     const service = new UnifiedEngineService(
       {
+        queryRejectedConfigImport: async () => null,
         start: async () => undefined,
         shutdown: async () => pendingEvent.resolve(null),
         shutdownUntilComplete: async () => pendingEvent.resolve(null),
@@ -288,6 +294,7 @@ describe('UnifiedEngineService', () => {
     const snapshots: UnifiedEngineSnapshot[] = [];
     const service = new UnifiedEngineService(
       {
+        queryRejectedConfigImport: async () => null,
         start: async () => undefined,
         shutdown: async () => undefined,
         shutdownUntilComplete: async () => undefined,
@@ -334,6 +341,7 @@ describe('UnifiedEngineService', () => {
     const snapshots: UnifiedEngineSnapshot[] = [];
     const service = new UnifiedEngineService(
       {
+        queryRejectedConfigImport: async () => null,
         start: async () => undefined,
         shutdown: async () => undefined,
         shutdownUntilComplete: async () => undefined,
@@ -374,6 +382,7 @@ describe('UnifiedEngineService', () => {
     const snapshots: UnifiedEngineSnapshot[] = [];
     const service = new UnifiedEngineService(
       {
+        queryRejectedConfigImport: async () => null,
         start: async () => undefined,
         shutdown: async () => undefined,
         shutdownUntilComplete: async () => undefined,
@@ -395,6 +404,7 @@ describe('UnifiedEngineService', () => {
     const nextEvent = jest.fn<UnifiedEngineApi['nextEvent']>();
     const service = new UnifiedEngineService(
       {
+        queryRejectedConfigImport: async () => null,
         start: async () => {
           throw new Error('native start failed');
         },
@@ -422,6 +432,7 @@ describe('UnifiedEngineService', () => {
     const startup = deferred<void>();
     const shutdown = jest.fn(async () => undefined);
     const service = new UnifiedEngineService({
+      queryRejectedConfigImport: async () => null,
       start: () => startup.promise,
       shutdown,
       shutdownUntilComplete: shutdown,
@@ -453,6 +464,7 @@ describe('UnifiedEngineService', () => {
     const snapshots: UnifiedEngineSnapshot[] = [];
     const service = new UnifiedEngineService(
       {
+        queryRejectedConfigImport: async () => null,
         start,
         shutdown,
         shutdownUntilComplete: shutdown,
