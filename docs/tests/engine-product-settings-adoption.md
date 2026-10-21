@@ -80,6 +80,7 @@ Commands, exits, hashes and actual artifacts are in the task report's library.
 | Android development Release APK | Exit 0 | AAR/merged/stripped/APK chain and final source stamp verified |
 | iOS development Release app and extensions | Exit 0 | Xcode 27; unsigned simulator app and keyboard embed final source |
 | Existing service and structured-error checks | 18 passed | Existing checks; only API fixtures changed |
+| Full check:ci | Exit 0 | 233 suites / 1888 checks, coverage rerun, 27 Ruby assertions |
 | Lint and TypeScript checks | Exit 0 | Consumer and module source |
 | Normal release-source gate | Exit 1, expected | Engine commit is not on main; gate remains enabled |
 | Pin schema check | Exit 0 | Schema only; no release acceptance |
@@ -124,7 +125,8 @@ The service now reads structured failure fields without loading Expo to classify
 
 No browser, VM, Mobile app UI, physical-device install, production profile or OS
 keychain was used. Existing Android AVDs and a personal device were inventoried only.
-No new unit test or assertion was added. The existing API fixtures include the query.
+No new unit test or assertion was added. The existing API fixtures include the query. The startup fixture isolates the new
+root native notice like its other native root components. Its six assertions remain unchanged.
 The primary behavior evidence is the real generated-binding E2E above.
 
 The tests do not execute Expo/React Native UI. They do not verify actual App Group
