@@ -6,6 +6,7 @@ import type {
   ConnectivityOpportunity,
 } from './contracts';
 import { AppState } from 'react-native';
+import type { RejectedConfigImport } from './contracts';
 import { createLogger } from '@/support/observability';
 import {
   createInitialUnifiedEngineSnapshot,
@@ -18,6 +19,7 @@ const log = createLogger('UnifiedEngineService');
 
 export interface UnifiedEngineApi {
   start(config: EngineConfig): Promise<void>;
+  queryRejectedConfigImport(): Promise<RejectedConfigImport | null>;
   shutdown(deadlineMs?: number): Promise<void>;
   shutdownUntilComplete(): Promise<void>;
   resume(): Promise<void>;
@@ -42,6 +44,7 @@ export class UnifiedEngineService {
   private nativeHandleExists = false;
   private startInFlight: Promise<void> | null = null;
   private eventLoop: Promise<void> | null = null;
+  private configImportQuery: Promise<void> | null = null;
   private networkUnsubscribe: (() => void) | null = null;
   private readonly eventSubscribers = new Set<EngineEventSubscriber>();
 
@@ -58,6 +61,7 @@ export class UnifiedEngineService {
     if (this.startInFlight) return this.startInFlight;
 
     const generation = ++this.generation;
+    this.configImportQuery = null;
     this.snapshot = {
       ...createInitialUnifiedEngineSnapshot(),
       status: 'starting',
@@ -101,14 +105,50 @@ export class UnifiedEngineService {
     );
   }
 
-  notifyConnectivityOpportunity(reason: ConnectivityOpportunity): Promise<void> {
-    if (!this.nativeStarted) return Promise.resolve();
-    return this.api.notifyConnectivityOpportunity(reason);
+  async notifyConnectivityOpportunity(reason: ConnectivityOpportunity): Promise<void> {
+    if (!this.nativeStarted) return;
+    try {
+      await this.api.notifyConnectivityOpportunity(reason);
+    } finally {
+      // Android also resumes natively. Refresh after the foreground recovery path.
+      if (reason === 'foreground') await this.refreshRejectedConfigImport();
+    }
   }
 
-  resume(): Promise<void> {
+  async resume(): Promise<void> {
+    if (!this.nativeStarted) return;
+    await this.api.resume();
+    await this.refreshRejectedConfigImport();
+  }
+
+  refreshRejectedConfigImport(): Promise<void> {
     if (!this.nativeStarted) return Promise.resolve();
-    return this.api.resume();
+    if (this.configImportQuery) return this.configImportQuery;
+    const generation = this.generation;
+    const query = this.queryRejectedConfigImport(generation);
+    this.configImportQuery = query;
+    void query.finally(() => {
+      if (this.configImportQuery === query) this.configImportQuery = null;
+    });
+    return query;
+  }
+
+  private async queryRejectedConfigImport(generation: number): Promise<void> {
+    try {
+      const rejection = await this.api.queryRejectedConfigImport();
+      if (generation !== this.generation || !this.nativeStarted) return;
+      this.updateSnapshot({ configImportStatus: { kind: 'checked', rejection } });
+    } catch (error) {
+      if (generation !== this.generation || !this.nativeStarted) return;
+      const failure = error !== null && typeof error === 'object'
+        && 'code' in error && typeof error.code === 'number'
+        && 'category' in error && typeof error.category === 'string'
+        && 'retryable' in error && typeof error.retryable === 'boolean'
+        ? { code: error.code, category: error.category, retryable: error.retryable }
+        : null;
+      this.updateSnapshot({ configImportStatus: { kind: 'unavailable', failure } });
+      log.warn('Failed to query rejected configuration import status', failure);
+    }
   }
 
   setBackgroundSyncPolicy(enabled: boolean): Promise<void> {
@@ -197,6 +237,8 @@ export class UnifiedEngineService {
         isStarted: true,
         lastError: null,
       });
+      await this.refreshRejectedConfigImport();
+      if (generation !== this.generation) return;
       const eventLoop = this.consumeEvents(generation);
       this.eventLoop = eventLoop;
       void eventLoop.then(

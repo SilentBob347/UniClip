@@ -20,6 +20,7 @@ const config_plugins_1 = require("expo/config-plugins");
  *
  * Also enables the Gradle build cache so unchanged task outputs (Java/Kotlin/
  * resources) are reused across CI runs via the `setup-gradle` action cache.
+ * Reserve enough JVM heap and metaspace to merge native debug metadata.
  */
 const RELEASE_DEVICE_ABIS = 'arm64-v8a';
 const withGradleBuildTuning = (config) => (0, config_plugins_1.withGradleProperties)(config, (config) => {
@@ -35,6 +36,7 @@ const withGradleBuildTuning = (config) => (0, config_plugins_1.withGradlePropert
     };
     setProperty('reactNativeArchitectures', RELEASE_DEVICE_ABIS);
     setProperty('org.gradle.caching', 'true');
+    setProperty('org.gradle.jvmargs', '-Xmx4096m -XX:MaxMetaspaceSize=1024m');
     return config;
 });
 exports.default = withGradleBuildTuning;

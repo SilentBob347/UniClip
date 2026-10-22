@@ -45,6 +45,7 @@ import uniffi.uc_engine_uniffi.BindingAnalyticsDeviceType
 import uniffi.uc_engine_uniffi.BindingAnalyticsOs
 import uniffi.uc_engine_uniffi.BindingConfig
 import uniffi.uc_engine_uniffi.BindingEngineState
+import uniffi.uc_engine_uniffi.ConfigImportRejectionReason
 import uniffi.uc_engine_uniffi.BindingErrorCategory
 import uniffi.uc_engine_uniffi.BindingEvent
 import uniffi.uc_engine_uniffi.BindingException
@@ -688,6 +689,19 @@ class UcEngineModule : Module() {
     }
 
     Function("coreVersion") { coreVersion() }
+
+    AsyncFunction("queryRejectedConfigImport") {
+      engineResult {
+        mapOf("rejection" to requireEngine().queryRejectedConfigImport()?.let { rejected ->
+          val reason = when (rejected.reason) {
+            ConfigImportRejectionReason.UNSUPPORTED_FORMAT -> "unsupportedFormat"
+            ConfigImportRejectionReason.MALFORMED_MARKER -> "malformedMarker"
+            ConfigImportRejectionReason.MISSING_RUNTIME_MEMBERS -> "missingRuntimeMembers"
+          }
+          mapOf("reason" to reason, "message" to rejected.message)
+        })
+      }
+    }
 
     AsyncFunction("startEngineDiagnosticCapture") { durationMs: Double ->
       prepareDiagnosticLogging()

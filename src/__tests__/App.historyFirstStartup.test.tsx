@@ -57,6 +57,7 @@ jest.mock('../components/DeviceTrustNotificationObserver', () => ({
   DeviceTrustNotificationObserver: () => null,
 }));
 jest.mock('../components/LanQrScannerHost', () => ({ LanQrScannerHost: () => null }));
+jest.mock('../components/ConfigImportNotice', () => ({ ConfigImportNotice: () => null }));
 jest.mock('../i18n', () => ({
   __esModule: true,
   default: { t: (key: string) => key },

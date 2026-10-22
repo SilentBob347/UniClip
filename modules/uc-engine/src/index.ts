@@ -423,6 +423,16 @@ export interface HostSuspensionEvent {
   transitionId: number;
 }
 
+export type ConfigImportRejectionReason =
+  | 'unsupportedFormat'
+  | 'malformedMarker'
+  | 'missingRuntimeMembers';
+
+export interface RejectedConfigImport {
+  reason: ConfigImportRejectionReason;
+  message: string;
+}
+
 interface UcEngineNativeModule {
   addListener?(
     eventName: 'onHostSuspension',
@@ -454,6 +464,7 @@ interface UcEngineNativeModule {
     accessToken: string,
     previousUrl?: string
   ): Promise<RelaySaveResult>;
+  queryRejectedConfigImport(): Promise<EngineCallResult<{ rejection: RejectedConfigImport | null }>>;
   queryCustomRelays(): Promise<CustomRelay[]>;
   queryRelayOverview(): Promise<RelayOverview>;
   addCustomRelay(url: string, accessToken: string): Promise<CustomRelayMutationResult>;
@@ -599,6 +610,12 @@ export function coreVersion(): string {
 export async function start(config: EngineConfig): Promise<void> {
   await NativeModule.start(config);
   await publishAnalyticsState('refresh');
+}
+
+/** Null means no rejected pending input. It does not confirm import success. */
+export async function queryRejectedConfigImport(): Promise<RejectedConfigImport | null> {
+  const result = await unwrapEngineCall(NativeModule.queryRejectedConfigImport());
+  return result.rejection;
 }
 
 export function saveCustomRelayNode(

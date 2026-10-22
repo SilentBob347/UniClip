@@ -39,5 +39,16 @@
   "language": {
     "title": "语言",
     "system": "跟随系统"
+  },
+  "configImport": {
+    "rejectedTitle": "导入未完成",
+    "reason": {
+      "unsupportedFormat": "待导入配置使用了不受支持的格式。",
+      "malformedMarker": "待导入配置的标记无效。",
+      "missingRuntimeMembers": "待导入配置缺少必需资料。"
+    },
+    "reexport": "待导入资料已保留。原空间仍可使用。请在源安装中使用新版本重新导出配置包。",
+    "unavailableTitle": "无法读取导入状态",
+    "unavailableMessage": "应用无法读取待导入状态。这不表示导入成功。你可继续使用原空间。请重试状态查询。"
   }
 }

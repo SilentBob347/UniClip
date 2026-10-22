@@ -39,5 +39,16 @@
   "language": {
     "title": "Language",
     "system": "Follow system"
+  },
+  "configImport": {
+    "rejectedTitle": "Import was not completed",
+    "reason": {
+      "unsupportedFormat": "The pending configuration uses an unsupported format.",
+      "malformedMarker": "The pending configuration marker is invalid.",
+      "missingRuntimeMembers": "The pending configuration is missing required data."
+    },
+    "reexport": "Your pending data was kept. The original space remains available. Use the new version on the source installation to export the configuration bundle again.",
+    "unavailableTitle": "Import status unavailable",
+    "unavailableMessage": "The app could not read the pending import status. This does not confirm import success. You can continue using the original space. Retry the status query."
   }
 }

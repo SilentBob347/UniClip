@@ -150,7 +150,7 @@ async function startFake(overrides: Partial<Behavior> = {}): Promise<Fake> {
         response.writeHead(302, { location: `${base()}/dl/${encodeURIComponent(direct)}` });
         return response.end();
       }
-      const body = behavior.corruptDownload ? Buffer.concat([bytes.subarray(0, -1), Buffer.from([0])]) : bytes;
+      const body = behavior.corruptDownload ? Buffer.concat([bytes.subarray(0, -1), Buffer.from([bytes[bytes.length - 1] ^ 1])]) : bytes;
       const range = request.headers.range;
       if (range) {
         response.writeHead(206, { 'content-range': `bytes 0-0/${body.length}`, 'content-length': 1 });
@@ -224,7 +224,7 @@ function run(args: string[], env: Record<string, string | undefined>): Promise<R
 describe('GitCode APK mirror upload', () => {
   const dirs: string[] = [];
   const servers: Fake[] = [];
-  const apk = randomBytes(2 * 1024 * 1024 + 17);
+  const apk = Buffer.concat([randomBytes(2 * 1024 * 1024 + 16), Buffer.from([0])]);
   const sha256 = createHash('sha256').update(apk).digest('hex');
 
   afterEach(async () => {
